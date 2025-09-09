@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microplastics Detection System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a2463 0%, #1565c0 50%, #64b5f6 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 900px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #e3f2fd;
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .video-feed {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #0d47a1;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(45deg, #1565c0, #0d47a1);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(45deg, #1976d2, #1565c0);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(45deg, #d32f2f, #b71c1c);
+        }
+        
+        .btn-success {
+            background: linear-gradient(45deg, #388e3c, #1b5e20);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .camera-options {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .camera-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .camera-btn.active {
+            background: linear-gradient(45deg, #1976d2, #1565c0);
+            box-shadow: 0 0 10px rgba(33, 150, 243, 0.5);
+        }
+        
+        .results {
+            margin-top: 20px;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .level-indicator {
+            height: 20px;
+            border-radius: 10px;
+            background: #0d47a1;
+            margin: 20px 0;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .level-fill {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #4caf50, #ffeb3b, #f44336);
+            width: 30%;
+            transition: width 0.5s ease;
+        }
+        
+        .level-markers {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-box {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .particles-list {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .particle-item {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .size-badge {
+            background: #1976d2;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        
+        .history-chart {
+            margin-top: 20px;
+            height: 200px;
+            display: flex;
+            align-items: flex-end;
+            gap: 5px;
+        }
+        
+        .chart-bar {
+            background: linear-gradient(to top, #1976d2, #0d47a1);
+            flex: 1;
+            border-radius: 5px 5px 0 0;
+            position: relative;
+            min-width: 20px;
+        }
+        
+        .chart-label {
+            position: absolute;
+            bottom: -25px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+        
+        .pulse {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4caf50;
+            margin-right: 5px;
+            box-shadow: 0 0 0 rgba(76, 175, 80, 0.4);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+            }
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        
+        .water-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            color: #bbdefb;
+        }
+        
+        .permission-prompt {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Microplastics Detection System</h1>
+            <p class="subtitle">Real-time monitoring and analysis of microplastics in water samples</p>
+        </header>
+        
+        <div class="dashboard">
+            <div class="card">
+                <h2 class="card-title">
+                    <i class="fas fa-video"></i> Live Video Feed
+                </h2>
+                <div class="video-container">
+                    <div class="loading" id="loadingText">Select a camera source to begin</div>
+                    <video class="video-feed" id="videoFeed" autoplay playsinline style="display: none;"></video>
+                    <div class="water-icon"><i class="fas fa-tint"></i></div>
+                </div>
+                
+                <div class="camera-options">
+                    <button class="camera-btn" id="laptopCameraBtn" onclick="activateLaptopCamera()">
+                        <i class="fas fa-laptop"></i> Laptop Camera
+                    </button>
+                    <button class="camera-btn" id="externalCameraBtn" onclick="activateExternalCamera()">
+                        <i class="fas fa-external-link-alt"></i> External Camera
+                    </button>
+                </div>
+                
+                <div class="permission-prompt" id="permissionPrompt">
+                    <p><strong>Camera Permission Required</strong></p>
+                    <p>Please allow camera access in your browser to use this feature.</p>
+                </div>
+                
+                <div class="controls">
+                    <button class="btn" id="connectBtn" onclick="connectCamera()">
+                        <i class="fas fa-plug"></i> Connect Camera
+                    </button>
+                    <button class="btn btn-success" id="startBtn" onclick="startDetection()" disabled>
+                        <i class="fas fa-play"></i> Start Detection
+                    </button>
+                    <button class="btn btn-danger" id="stopBtn" onclick="stopDetection()" disabled>
+                        <i class="fas fa-stop"></i> Stop
+                    </button>
+                    <button class="btn" id="captureBtn" onclick="captureSample()" disabled>
+                        <i class="fas fa-camera"></i> Capture Sample
+                    </button>
+                </div>
+                
+                <div class="results">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-line"></i> Detection Results
+                    </h3>
+                    
+                    <div class="result-item">
+                        <span>Microplastics Level:</span>
+                        <span id="levelValue">Not detected</span>
+                    </div>
+                    
+                    <div class="level-indicator">
+                        <div class="level-fill" id="levelFill"></div>
+                    </div>
+                    
+                    <div class="level-markers">
+                        <span>Low</span>
+                        <span>Moderate</span>
+                        <span>High</span>
+                        <span>Very High</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span>Particles Count:</span>
+                        <span id="particlesCount">0 particles/mL</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span>Detection Confidence:</span>
+                        <span id="confidenceValue">0%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">
+                    <i class="fas fa-microscope"></i> Analysis Details
+                </h2>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-label">Sample Volume</div>
+                        <div class="stat-value">50 mL</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Analysis Time</div>
+                        <div class="stat-value">0:00 min</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Avg. Size</div>
+                        <div class="stat-value">0.0 μm</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Common Type</div>
+                        <div class="stat-value">N/A</div>
+                    </div>
+                </div>
+                
+                <h3 class="card-title" style="margin-top: 20px;">
+                    <i class="fas fa-list"></i> Detected Particles
+                </h3>
+                
+                <div class="particles-list" id="particlesList">
+                    <div class="particle-item" style="text-align: center; justify-content: center;">
+                        No particles detected
+                    </div>
+                </div>
+                
+                <h3 class="card-title" style="margin-top: 20px;">
+                    <i class="fas fa-history"></i> History Trend
+                </h3>
+                
+                <div class="history-chart">
+                    <div class="chart-bar" style="height: 40%;">
+                        <div class="chart-label">Mon</div>
+                    </div>
+                    <div class="chart-bar" style="height: 60%;">
+                        <div class="chart-label">Tue</div>
+                    </div>
+                    <div class="chart-bar" style="height: 30%;">
+                        <div class="chart-label">Wed</div>
+                    </div>
+                    <div class="chart-bar" style="height: 70%;">
+                        <div class="chart-label">Thu</div>
+                    </div>
+                    <div class="chart-bar" style="height: 90%;">
+                        <div class="chart-label">Fri</div>
+                    </div>
+                    <div class="chart-bar" style="height: 50%;">
+                        <div class="chart-label">Sat</div>
+                    </div>
+                    <div class="chart-bar" style="height: 80%;">
+                        <div class="chart-label">Sun</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    
+    </div>
+
+    <script>
+        // DOM Elements
+        const connectBtn = document.getElementById('connectBtn');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const videoFeed = document.getElementById('videoFeed');
+        const levelValue = document.getElementById('levelValue');
+        const levelFill = document.getElementById('levelFill');
+        const particlesCount = document.getElementById('particlesCount');
+        const confidenceValue = document.getElementById('confidenceValue');
+        const systemStatus = document.getElementById('systemStatus');
+        const loadingText = document.getElementById('loadingText');
+        const laptopCameraBtn = document.getElementById('laptopCameraBtn');
+        const externalCameraBtn = document.getElementById('externalCameraBtn');
+        const permissionPrompt = document.getElementById('permissionPrompt');
+        const statusPulse = document.getElementById('statusPulse');
+        const particlesList = document.getElementById('particlesList');
+        
+        // State variables
+        let isConnected = false;
+        let isDetecting = false;
+        let stream = null;
+        let cameraType = null; // 'laptop' or 'external'
+        let detectionInterval = null;
+        
+        // Functions
+        function activateLaptopCamera() {
+            cameraType = 'laptop';
+            laptopCameraBtn.classList.add('active');
+            externalCameraBtn.classList.remove('active');
+            systemStatus.textContent = 'Laptop camera selected';
+            statusPulse.style.background = '#ffeb3b';
+            connectBtn.disabled = false;
+        }
+        
+        function activateExternalCamera() {
+            cameraType = 'external';
+            externalCameraBtn.classList.add('active');
+            laptopCameraBtn.classList.remove('active');
+            systemStatus.textContent = 'External camera selected';
+            statusPulse.style.background = '#ffeb3b';
+            connectBtn.disabled = false;
+        }
+        
+        function connectCamera() {
+            if (!cameraType) {
+                alert('Please select a camera type first.');
+                return;
+            }
+            
+            if (isConnected) {
+                // Disconnect
+                disconnectCamera();
+                return;
+            }
+            
+            // Request camera access
+            systemStatus.textContent = 'Requesting camera access...';
+            statusPulse.style.background = '#ffeb3b';
+            connectBtn.disabled = true;
+            
+            const constraints = {
+                video: {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    facingMode: cameraType === 'laptop' ? 'user' : 'environment'
+                }
+            };
+            
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(function(mediaStream) {
+                    stream = mediaStream;
+                    videoFeed.srcObject = stream;
+                    videoFeed.style.display = 'block';
+                    loadingText.style.display = 'none';
+                    
+                    isConnected = true;
+                    connectBtn.innerHTML = '<i class="fas fa-plug"></i> Disconnect Camera';
+                    systemStatus.textContent = 'Camera connected - Ready for detection';
+                    statusPulse.style.background = '#4caf50';
+                    startBtn.disabled = false;
+                    captureBtn.disabled = false;
+                    permissionPrompt.style.display = 'none';
+                })
+                .catch(function(error) {
+                    console.error('Error accessing camera:', error);
+                    systemStatus.textContent = 'Camera access denied';
+                    statusPulse.style.background = '#f44336';
+                    permissionPrompt.style.display = 'block';
+                    connectBtn.disabled = false;
+                    
+                    if (error.name === 'NotFoundError' || error.name === 'OverconstrainedError') {
+                        systemStatus.textContent = 'Required camera not found';
+                    }
+                });
+        }
+        
+        function disconnectCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            
+            isConnected = false;
+            isDetecting = false;
+            connectBtn.innerHTML = '<i class="fas fa-plug"></i> Connect Camera';
+            systemStatus.textContent = 'Camera disconnected';
+            statusPulse.style.background = '#f44336';
+            videoFeed.style.display = 'none';
+            loadingText.style.display = 'block';
+            startBtn.disabled = true;
+            stopBtn.disabled = true;
+            captureBtn.disabled = true;
+            
+            // Clear any running intervals
+            if (detectionInterval) {
+                clearInterval(detectionInterval);
+                detectionInterval = null;
+            }
+            
+            // Reset analysis data
+            levelFill.style.width = '0%';
+            levelValue.textContent = 'Not detected';
+            particlesCount.textContent = '0 particles/mL';
+            confidenceValue.textContent = '0%';
+            particlesList.innerHTML = '<div class="particle-item" style="text-align: center; justify-content: center;">No particles detected</div>';
+        }
+        
+        function startDetection() {
+            if (!isConnected) {
+                alert('Please connect a camera first.');
+                return;
+            }
+            
+            isDetecting = true;
+            systemStatus.textContent = 'Detection in progress...';
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            
+            // Simulate detection process with random values
+            simulateDetection();
+        }
+        
+        function stopDetection() {
+            isDetecting = false;
+            systemStatus.textContent = 'Detection stopped';
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            
+            // Clear the interval
+            if (detectionInterval) {
+                clearInterval(detectionInterval);
+                detectionInterval = null;
+            }
+        }
+        
+        function captureSample() {
+            if (!isConnected) {
+                alert('Please connect a camera first.');
+                return;
+            }
+            
+            systemStatus.textContent = 'Sample captured and saved';
+            
+            // Show a temporary confirmation
+            setTimeout(() => {
+                if (isDetecting) {
+                    systemStatus.textContent = 'Detection in progress...';
+                } else {
+                    systemStatus.textContent = 'Camera connected - Ready for detection';
+                }
+            }, 2000);
+        }
+        
+        function simulateDetection() {
+            if (!isDetecting) return;
+            
+            // Generate random values for demonstration
+            const randomLevel = Math.floor(Math.random() * 100);
+            const randomParticles = Math.floor(Math.random() * 200) + 50;
+            const randomConfidence = Math.floor(Math.random() * 20) + 80;
+            
+            // Update values
+            levelFill.style.width = randomLevel + '%';
+            particlesCount.textContent = randomParticles + ' particles/mL';
+            confidenceValue.textContent = randomConfidence + '%';
+            
+            // Set level text
+            if (randomLevel < 25) {
+                levelValue.textContent = 'Low';
+            } else if (randomLevel < 50) {
+                levelValue.textContent = 'Moderate';
+            } else if (randomLevel < 75) {
+                levelValue.textContent = 'High';
+            } else {
+                levelValue.textContent = 'Very High';
+            }
+            
+            // Update particles list
+            particlesList.innerHTML = '';
+            const particleCount = Math.min(randomParticles/10, 10);
+            
+            for (let i = 1; i <= particleCount; i++) {
+                const size = (Math.random() * 2.5).toFixed(1);
+                const particleItem = document.createElement('div');
+                particleItem.className = 'particle-item';
+                particleItem.innerHTML = `
+                    <span>Particle #${i}</span>
+                    <span class="size-badge">${size} μm</span>
+                `;
+                particlesList.appendChild(particleItem);
+            }
+            
+            // Continue simulation if still detecting
+            if (isDetecting) {
+                detectionInterval = setTimeout(simulateDetection, 2000);
+            }
+        }
+        
+        // Initialize UI
+        statusPulse.style.background = '#f44336';
+        
+        // Auto-select laptop camera on page load
+        window.onload = function() {
+            activateLaptopCamera();
+        };
+    </script>
+</body>
+</html>
